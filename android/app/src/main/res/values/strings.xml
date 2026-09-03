@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Task Weave</string>
+    <string name="fcm_default_channel_id">taskweave_reminders</string>
+    <string name="fcm_default_channel_name">Reminders &amp; deadlines</string>
+
+    <string name="sign_in_title">Task Weave</string>
+    <string name="sign_in_subtitle">Your tasks, focus, and AI coach — everywhere.</string>
+    <string name="sign_in_button">Continue with Google</string>
+
+    <string name="nav_today">Today</string>
+    <string name="nav_tasks">Tasks</string>
+    <string name="nav_focus">Focus</string>
+    <string name="nav_chat">Coach</string>
+
+    <string name="add_task">Add task</string>
+    <string name="run_schedule">Auto-schedule my day</string>
+    <string name="next_step">Next micro-step</string>
+    <string name="chat_hint">Ask your coach…</string>
+    <string name="voice_input">Voice input</string>
+    <string name="copy_starter">Copy</string>
+    <string name="sign_out">Sign out</string>
+</resources>

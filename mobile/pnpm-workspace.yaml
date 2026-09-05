@@ -1,0 +1,6 @@
+packages:
+  - .
+  - modules/*
+
+patchedDependencies:
+  '@react-native/gradle-plugin@0.85.0': patches/react-native-gradle-plugin-0.85.0.patch

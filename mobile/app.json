@@ -1,0 +1,29 @@
+{
+  "expo": {
+    "name": "WEFT",
+    "slug": "weft",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "scheme": ["weft", "com.googleusercontent.apps.611514829994-fuh73027tm7ru5npv3a84mfq3afkm345"],
+    "userInterfaceStyle": "light",
+    "newArchEnabled": true,
+    "android": {
+      "package": "com.weft.mobile",
+      "adaptiveIcon": { "backgroundColor": "#F3F0E8" },
+      "permissions": ["android.permission.POST_NOTIFICATIONS", "android.permission.ACCESS_NOTIFICATION_POLICY"]
+    },
+    "plugins": [
+      "expo-router",
+      "expo-secure-store",
+      ["expo-notifications", { "defaultChannel": "work" }],
+      "./plugins/withFocusBridge"
+    ],
+    "experiments": { "typedRoutes": true },
+    "extra": {
+      "apiUrl": "https://task-weave-backend-57923630274.asia-south1.run.app",
+      "googleWebClientId": "611514829994-jeeb1eg42ghcrmicruek2nbhmmf9fgo5.apps.googleusercontent.com",
+      "googleAndroidClientId": "611514829994-fuh73027tm7ru5npv3a84mfq3afkm345.apps.googleusercontent.com",
+      "googleAndroidRedirectUri": "com.googleusercontent.apps.611514829994-fuh73027tm7ru5npv3a84mfq3afkm345:/oauthredirect"
+    }
+  }
+}

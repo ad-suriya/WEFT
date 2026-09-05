@@ -1,0 +1,6 @@
+import { RefreshControl, ScrollView, Text, View } from 'react-native';
+import { useWorkspace } from '@/workspace';
+import { Badge, Card, Empty, ScreenTitle, s } from '@/ui';
+import { colors } from '@/theme';
+
+export default function History() { const { data, refreshing, refresh } = useWorkspace(); const fallback = [...data.tasks].sort((a,b) => b.updated_at.localeCompare(a.updated_at)).map(t => ({ id: t.id, kind: t.status, message: t.task_name, created_at: t.updated_at })); const rows = data.activities.length ? data.activities : fallback; return <ScrollView style={s.page} contentContainerStyle={s.content} refreshControl={<RefreshControl refreshing={refreshing} onRefresh={refresh} />}><ScreenTitle eyebrow="Your continuous thread" title="Activity" />{rows.length ? rows.map(item => <Card key={`${item.kind}-${item.id}`}><View style={s.between}><Badge color={item.kind.includes('COMPLETE') ? colors.green : colors.blue}>{item.kind.replaceAll('_',' ')}</Badge><Text style={s.muted}>{new Date(item.created_at).toLocaleString()}</Text></View><Text style={s.body}>{item.message}</Text></Card>) : <Empty>Your starts, pauses, progress updates, browser references and completions will appear here.</Empty>}</ScrollView>; }

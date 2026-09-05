@@ -1,0 +1,3 @@
+<resources>
+  <string name="weft_block_service_description">Lets WEFT temporarily send you home instead of opening apps you\'ve chosen to block during an active work session. Turn this off anytime in Android Settings › Accessibility, or from WEFT\'s Focus settings.</string>
+</resources>

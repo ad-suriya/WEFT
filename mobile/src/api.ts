@@ -1,5 +1,5 @@
 import Constants from 'expo-constants';
-import type { Activity, DeviceRecord, FocusPrefs, Goal, Habit, Profile, Reminder, Session, Task, WorkState, Workflow, WorkflowPlan, WorkspaceSnapshot } from './types';
+import type { Activity, DeviceRecord, FocusPrefs, Goal, Habit, Profile, Reference, Reminder, Session, Task, WorkState, Workflow, WorkflowPlan, WorkspaceSnapshot } from './types';
 
 const baseUrl = String(Constants.expoConfig?.extra?.apiUrl || '').replace(/\/$/, '');
 let tokenProvider: () => Promise<string | null> = async () => null;
@@ -28,6 +28,8 @@ export const api = {
   upsertProfile: () => request<Profile>('/api/me', { method: 'POST' }),
   acceptConsent: () => request('/api/me/consent', { method: 'POST' }),
   patchFocusPrefs: (body: Partial<FocusPrefs>) => request<FocusPrefs>('/api/me/focus', { method: 'PATCH', body: JSON.stringify(body) }),
+  exportMyData: () => request<Record<string, unknown>>('/api/me/data/export'),
+  deleteMyData: () => request<{ deleted: Record<string, number> }>('/api/me/data', { method: 'DELETE' }),
   tasks: () => request<Task[]>('/api/tasks'),
   createTask: (body: Partial<Task> & { task_name: string }) => request<Task>('/api/tasks', { method: 'POST', body: JSON.stringify(body) }),
   patchTask: (id: number, body: Partial<Task>) => request<Task>(`/api/tasks/${id}`, { method: 'PATCH', body: JSON.stringify(body) }),
@@ -54,14 +56,15 @@ export const api = {
   workState: () => optional<WorkState | null>('/api/work-state', null),
   saveWorkState: (body: Partial<WorkState>) => request<WorkState>('/api/work-state', { method: 'PUT', body: JSON.stringify(body) }),
   activities: () => optional<Activity[]>('/api/activity', []),
+  references: () => optional<Reference[]>('/api/references', []),
   devices: () => optional<DeviceRecord[]>('/api/devices', []),
   registerDevice: (body: Omit<DeviceRecord, 'last_seen'> & { push_token?: string | null }) => request<DeviceRecord>('/api/devices', { method: 'POST', body: JSON.stringify(body) }),
   heartbeat: (deviceId: string) => request<DeviceRecord>(`/api/devices/${encodeURIComponent(deviceId)}/heartbeat`, { method: 'POST' }),
   testPush: () => request<{ sent: number; failed: number }>('/api/devices/push/test', { method: 'POST' }),
   loadWorkspace: async (): Promise<WorkspaceSnapshot> => {
-    const [tasks, goals, habits, sessions, workflows, reminders, activities, devices, workState] = await Promise.all([
-      api.tasks(), api.goals(), api.habits(), api.sessions(), api.workflows(), api.reminders(), api.activities(), api.devices(), api.workState(),
+    const [tasks, goals, habits, sessions, workflows, reminders, activities, references, devices, workState] = await Promise.all([
+      api.tasks(), api.goals(), api.habits(), api.sessions(), api.workflows(), api.reminders(), api.activities(), api.references(), api.devices(), api.workState(),
     ]);
-    return { tasks, goals, habits, sessions, workflows, reminders, activities, devices, workState };
+    return { tasks, goals, habits, sessions, workflows, reminders, activities, references, devices, workState };
   },
 };

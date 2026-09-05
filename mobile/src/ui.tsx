@@ -1,8 +1,22 @@
 import type { PropsWithChildren, ReactNode } from 'react';
 import { ActivityIndicator, Pressable, StyleSheet, Text, TextInput, View, type PressableProps, type StyleProp, type TextInputProps, type ViewStyle } from 'react-native';
 import { colors, shadow } from './theme';
+import { deadlineChoices, deadlineFromDays } from './workTasks';
 
 export function ScreenTitle({ eyebrow, title, action }: { eyebrow?: string; title: string; action?: ReactNode }) { return <View style={s.titleRow}><View style={{ flex: 1 }}>{eyebrow && <Text style={s.eyebrow}>{eyebrow}</Text>}<Text style={s.h1}>{title}</Text></View>{action}</View>; }
+export function DeadlinePicker({ value, onChange }: { value: string | null; onChange: (v: string | null) => void }) {
+  return <View style={[s.row, { flexWrap: 'wrap' }]}>{deadlineChoices.map(choice => {
+    const choiceValue = deadlineFromDays(choice.days);
+    const active = choice.days === null ? value === null : !!value && !!choiceValue && new Date(value).toDateString() === new Date(choiceValue).toDateString();
+    return <Pressable key={choice.label} onPress={() => onChange(choiceValue)} style={{ paddingHorizontal: 12, paddingVertical: 7, borderWidth: 1.5, borderColor: colors.ink, backgroundColor: active ? colors.blue : colors.card }}><Text style={{ color: active ? colors.white : colors.ink, fontWeight: '800', fontSize: 12 }}>{choice.label}</Text></Pressable>;
+  })}</View>;
+}
+export function Toggle({ label, value, onChange }: { label: string; value: boolean; onChange: (v: boolean) => void }) {
+  return <Pressable onPress={() => onChange(!value)} style={[s.between, { paddingVertical: 10, paddingHorizontal: 13, borderWidth: 1.5, borderColor: colors.ink, backgroundColor: value ? colors.blue : colors.card }]}>
+    <Text style={{ color: value ? colors.white : colors.ink, fontWeight: '800', fontSize: 13 }}>{label}</Text>
+    <View style={{ width: 20, height: 20, borderWidth: 1.5, borderColor: value ? colors.white : colors.ink, backgroundColor: value ? colors.white : 'transparent', alignItems: 'center', justifyContent: 'center' }}>{value && <Text style={{ color: colors.blue, fontWeight: '900', fontSize: 13 }}>✓</Text>}</View>
+  </Pressable>;
+}
 export function Card({ children, accent, style }: PropsWithChildren<{ accent?: string; style?: object }>) { return <View style={[s.card, accent ? { borderTopColor: accent, borderTopWidth: 5 } : null, style]}>{children}</View>; }
 export function Button({ children, variant = 'dark', busy, style, ...props }: PropsWithChildren<Omit<PressableProps, 'style'> & { variant?: 'dark' | 'light' | 'danger'; busy?: boolean; style?: StyleProp<ViewStyle> }>) { const palette = variant === 'dark' ? [colors.ink, colors.white] : variant === 'danger' ? [colors.red, colors.white] : [colors.card, colors.ink]; return <Pressable disabled={busy || props.disabled} style={({ pressed }) => [s.button, { backgroundColor: palette[0] }, variant === 'light' && s.lightButton, pressed && { transform: [{ translateX: 2 }, { translateY: 2 }], shadowOpacity: 0 }, style]} {...props}>{busy ? <ActivityIndicator color={palette[1]} /> : <Text style={[s.buttonText, { color: palette[1] }]}>{children}</Text>}</Pressable>; }
 export function Field(props: TextInputProps) { return <TextInput placeholderTextColor={colors.muted} {...props} style={[s.field, props.multiline && { minHeight: 100, textAlignVertical: 'top' }, props.style]} />; }

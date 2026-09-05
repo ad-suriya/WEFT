@@ -153,10 +153,18 @@ def install_weft_sync(app: Any, db: Any, get_current_user: Callable, privacy: An
     @router.put("/work-state")
     def put_work_state(body: WorkStateIn, user: dict = Depends(get_current_user)):
         prior = store.get("work_states", user["id"], user["id"])
-        value = {"id": user["id"], "user_id": user["id"], **body.model_dump(), "updated_at": _now()}
+        # browser_context is written by a different client (the browser extension) than the one
+        # saving the rest of this state (the phone), on its own schedule. A caller that omits it —
+        # every phone-side save — must not blow away what the other client last wrote; only an
+        # explicit browser_context in this request may replace it.
+        value = {"id": user["id"], "user_id": user["id"], **body.model_dump(exclude={"browser_context"}), "updated_at": _now()}
         if body.browser_context:
-            value["browser_context"]["url"] = _safe_url(body.browser_context.url, privacy)
-            value["browser_context"]["captured_at"] = body.browser_context.captured_at or _now()
+            context = body.browser_context.model_dump()
+            context["url"] = _safe_url(body.browser_context.url, privacy)
+            context["captured_at"] = body.browser_context.captured_at or _now()
+            value["browser_context"] = context
+        elif prior and prior.get("browser_context"):
+            value["browser_context"] = prior["browser_context"]
         saved = store.save("work_states", value)
         changed = not prior or prior.get("status") != body.status or prior.get("last_activity") != body.last_activity
         if changed:

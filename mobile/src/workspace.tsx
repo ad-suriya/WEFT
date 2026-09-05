@@ -8,7 +8,7 @@ import { storage } from './storage';
 import { useAuth } from './auth';
 import type { Session, Task, WorkState, WorkspaceSnapshot } from './types';
 
-const empty: WorkspaceSnapshot = { tasks: [], goals: [], habits: [], sessions: [], workflows: [], reminders: [], activities: [], devices: [], workState: null };
+const empty: WorkspaceSnapshot = { tasks: [], goals: [], habits: [], sessions: [], workflows: [], reminders: [], activities: [], references: [], devices: [], workState: null };
 type WorkspaceValue = { data: WorkspaceSnapshot; loading: boolean; refreshing: boolean; error: string | null; refresh: () => Promise<void>; mutate: (fn: (data: WorkspaceSnapshot) => WorkspaceSnapshot) => void; saveWorkState: (patch: Partial<WorkState>) => Promise<WorkState>; registerDevice: () => Promise<void>; activeSession: Session | null; currentTask: Task | null; };
 const WorkspaceContext = createContext<WorkspaceValue | null>(null);
 

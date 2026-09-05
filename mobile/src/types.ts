@@ -17,6 +17,7 @@ export interface Workflow extends WorkflowPlan { id: number; sop_text: string; a
 export interface Reminder { id: number; task_id: number | null; message: string; remind_at: string; kind: string; acknowledged: number; due: boolean; }
 export interface Habit { id: number; name: string; cadence: 'DAILY' | 'WEEKLY'; streak: number; done_today: boolean; total_done: number; created_at: string; }
 export interface Activity { id: number; kind: string; message: string; task_id?: number | null; created_at: string; device_id?: string | null; }
+export interface Reference { id: number; title: string; url: string; task_id: number | null; snippet: string; created_at: string; }
 export interface BrowserContext { title: string; url: string; relevant: boolean | null; captured_at: string; device_id?: string; }
 export interface WorkState {
   task_id: number | null; workflow_id: number | null; current_step_index: number;
@@ -28,4 +29,4 @@ export interface WorkState {
 export interface DeviceRecord { device_id: string; name: string; device_type: string; last_seen: string; capabilities: string[]; push_token?: string | null; }
 export interface FocusPrefs { study_focus: boolean; hold_notifications: boolean; allow_list: string[]; }
 export interface Profile { id: string; email?: string; name?: string; picture?: string; consent_accepted_at?: string; focus_prefs?: FocusPrefs; }
-export interface WorkspaceSnapshot { tasks: Task[]; goals: Goal[]; habits: Habit[]; sessions: Session[]; workflows: Workflow[]; reminders: Reminder[]; activities: Activity[]; devices: DeviceRecord[]; workState: WorkState | null; }
+export interface WorkspaceSnapshot { tasks: Task[]; goals: Goal[]; habits: Habit[]; sessions: Session[]; workflows: Workflow[]; reminders: Reminder[]; activities: Activity[]; references: Reference[]; devices: DeviceRecord[]; workState: WorkState | null; }

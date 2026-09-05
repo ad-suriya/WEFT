@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Alert, AppState, SafeAreaView, ScrollView, Text, View } from 'react-native';
+import { Alert, AppState, Pressable, SafeAreaView, ScrollView, Text, View } from 'react-native';
 import { router, useLocalSearchParams } from 'expo-router';
 import { api } from '@/api';
 import { useWorkspace } from '@/workspace';
@@ -32,6 +32,7 @@ export default function Focus() {
   const [blockingAvailable, setBlockingAvailable] = useState<boolean | null>(null);
   const [blockingAccess, setBlockingAccess] = useState<boolean | null>(null);
   const [blockingActive, setBlockingActive] = useState(() => inferBlockingEnabledOnMount(trackingThisTask, data.workState?.status, false));
+  const [awaitingBlockGrant, setAwaitingBlockGrant] = useState(false);
   useEffect(() => { const timer = setInterval(() => setTick(x => x + 1), 1000); return () => clearInterval(timer); }, []);
   useEffect(() => { setNext(trackingThisTask ? data.workState?.next_action || '' : chosen?.next_micro_step || ''); }, [chosen?.id]);
   useEffect(() => { let alive = true; (async () => { const available = await FocusBridge.isAvailable(); const access = available ? await FocusBridge.hasAccess() : false; if (alive) { setFocusAvailable(available); setFocusAccess(access); } })(); return () => { alive = false; }; }, []);
@@ -75,6 +76,37 @@ export default function Focus() {
     if (!blockingActive) return;
     await FocusBridge.setBlockingEnabled(false);
     setBlockingActive(false);
+  };
+
+  // Permission can be granted mid-session (user leaves this screen, grants it in Settings, comes
+  // back) — re-apply here too, since start()/resume() only fire at those specific actions and would
+  // otherwise leave the native side never actually told to enable, despite the UI optimistically
+  // showing ON via inferBlockingEnabledOnMount.
+  useEffect(() => { if (focusAccess && trackingThisTask && data.workState?.status === 'ACTIVE') applyFocusBridge(true); }, [focusAccess]);
+  useEffect(() => { if (blockingAccess && trackingThisTask && data.workState?.status === 'ACTIVE') applyAppBlocking(true); }, [blockingAccess]);
+  useEffect(() => {
+    if (!awaitingBlockGrant) return;
+    const subscription = AppState.addEventListener('change', async state => {
+      if (state !== 'active') return;
+      const access = await FocusBridge.hasBlockingAccess();
+      setBlockingAccess(access);
+      if (access) { setAwaitingBlockGrant(false); setBlockingPref(true); await storage.saveBlockingEnabled(true); await applyAppBlocking(true); }
+    });
+    return () => subscription.remove();
+  }, [awaitingBlockGrant]);
+
+  // Lets App Blocking be turned on right from this screen's Connections card, instead of only from
+  // Settings — same underlying rule (needs at least one chosen app, and the Accessibility permission)
+  // but scoped to the session that's already running here.
+  const toggleBlockingFromConnections = async () => {
+    if (blockingPref) { setBlockingPref(false); await storage.saveBlockingEnabled(false); await applyAppBlocking(false); return; }
+    if (!blockingAvailable) { Alert.alert('Development build required', 'App blocking needs the WEFT Expo development build. The rest of the app works in Expo Go.'); return; }
+    const apps = await storage.blockedApps();
+    if (!apps.length) { router.push('/block-apps'); return; }
+    if (blockingAccess) { setBlockingPref(true); await storage.saveBlockingEnabled(true); await applyAppBlocking(true); return; }
+    setAwaitingBlockGrant(true);
+    await FocusBridge.requestBlockingAccess();
+    Alert.alert('Grant access in Android Settings', 'Turn on the "WEFT Focus Blocking" accessibility service, then come back — App Blocking will switch on automatically once it\'s granted.');
   };
 
   // Completing a workflow step must also mark its underlying task done (so My Work/Activity agree
@@ -162,7 +194,7 @@ export default function Focus() {
         <View style={s.between}><Text style={s.body}>Laptop</Text><Badge color={statusColor(laptop.state)}>{laptop.label}</Badge></View>
         <View style={s.between}><Text style={s.body}>Browser</Text><Badge color={statusColor(browser.state)}>{browser.label}</Badge></View>
         <View style={s.between}><Text style={s.body}>Focus</Text><Badge color={statusColor(focus.state)}>{focus.label}</Badge></View>
-        <View style={s.between}><Text style={s.body}>App Blocking</Text><Badge color={statusColor(blocking.state)}>{blocking.label}</Badge></View>
+        <Pressable onPress={toggleBlockingFromConnections} style={s.between}><Text style={s.body}>App Blocking</Text><Badge color={statusColor(blocking.state)}>{awaitingBlockGrant ? 'Waiting for access…' : blocking.label}</Badge></Pressable>
       </Card>
 
       <Card>

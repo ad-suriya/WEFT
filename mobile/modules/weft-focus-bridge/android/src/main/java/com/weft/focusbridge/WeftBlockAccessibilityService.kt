@@ -6,6 +6,7 @@ import android.content.Intent
 import android.content.SharedPreferences
 import android.content.pm.PackageManager
 import android.net.Uri
+import android.provider.Settings
 import android.view.accessibility.AccessibilityEvent
 
 /**
@@ -20,6 +21,15 @@ import android.view.accessibility.AccessibilityEvent
  * what the persisted block list contains.
  */
 class WeftBlockAccessibilityService : AccessibilityService() {
+
+  // A single foreground switch to a blocked app fires many accessibility events in quick succession
+  // (the app's own window-state changes as it's torn down after GLOBAL_ACTION_HOME). Without this
+  // guard, each one re-fires GLOBAL_ACTION_HOME — including while WEFT's own "blocked" screen is the
+  // thing currently in front — which was yanking that screen back to the launcher a second after it
+  // appeared. Only the first event for a given foreground switch to a blocked package acts.
+  private var lastBlockedPackage: String? = null
+  private var lastBlockAt: Long = 0L
+  private val BLOCK_DEBOUNCE_MS = 3000L
 
   override fun onAccessibilityEvent(event: AccessibilityEvent?) {
     val packageName = event?.packageName?.toString() ?: return
@@ -41,12 +51,31 @@ class WeftBlockAccessibilityService : AccessibilityService() {
 
     val blocked = prefs.getStringSet(KEY_PACKAGES, emptySet()) ?: emptySet()
     if (!blocked.contains(packageName)) return
+    if (WeftBlockOverlay.isShowing()) return
+
+    val now = System.currentTimeMillis()
+    if (packageName == lastBlockedPackage && now - lastBlockAt < BLOCK_DEBOUNCE_MS) return
+    lastBlockedPackage = packageName
+    lastBlockAt = now
+
+    // Prefer the floating overlay — it appears instantly on top of whatever's currently on screen
+    // (the app drawer, the app itself as it opens) instead of first sending the user home and then
+    // switching them into a separate WEFT screen. Falls back to the old in-app "Blocked" screen if
+    // the user hasn't granted "Draw over other apps".
+    if (Settings.canDrawOverlays(this)) {
+      WeftBlockOverlay.show(this, appLabel(packageName)) { performGlobalAction(GLOBAL_ACTION_HOME) }
+      return
+    }
 
     performGlobalAction(GLOBAL_ACTION_HOME)
     val intent = Intent(Intent.ACTION_VIEW, Uri.parse("weft://blocked?app=$packageName"))
       .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
     startActivity(intent)
   }
+
+  private fun appLabel(packageName: String): String = try {
+    packageManager.getApplicationLabel(packageManager.getApplicationInfo(packageName, 0)).toString()
+  } catch (e: Exception) { packageName }
 
   override fun onInterrupt() {}
 
